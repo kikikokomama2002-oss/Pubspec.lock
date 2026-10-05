@@ -4,43 +4,46 @@ on:
   workflow_dispatch:
 
 jobs:
-  generate-lockfile:
-    runs-on: ubuntu-24.04
+  generate:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout project
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Flutter 3.44.7
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.44.7'
-          channel: 'stable'
-          cache: true
-
-      - name: Verify Flutter and Dart versions
+      - name: Extract V27
         run: |
-          flutter --version
-          dart --version
+          rm -rf project
+          mkdir project
+          unzip -q offline_music_player_V27_CONFIRMED_BUGS_FIXED_V3.zip -d project
 
       - name: Check pubspec.yaml
         run: |
-          test -f pubspec.yaml
-          echo "pubspec.yaml found"
+          test -f project/src/pubspec.yaml
+          echo "pubspec.yaml found:"
+          ls -lh project/src/pubspec.yaml
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.7'
+          channel: stable
+          cache: true
 
       - name: Generate pubspec.lock
+        working-directory: project/src
         run: |
+          flutter --version
           flutter pub get
 
       - name: Verify pubspec.lock
         run: |
-          test -f pubspec.lock
-          ls -lh pubspec.lock
-          echo "pubspec.lock successfully generated"
+          test -f project/src/pubspec.lock
+          echo "pubspec.lock generated successfully:"
+          ls -lh project/src/pubspec.lock
 
       - name: Upload pubspec.lock
         uses: actions/upload-artifact@v4
         with:
-          name: pubspec-lock-flutter-3.44.7
-          path: pubspec.lock
-          if-no-files-found: error
+          name: pubspec-lock
+          path: project/src/pubspec.lock
